@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+.venv/
+venv/
+backend/venv/
+
+# Node
+frontend/node_modules/
+node_modules/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite3
+backend/soar.db
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/
