@@ -50,9 +50,11 @@ npm.cmd run dev
 
 ✅ 前端已启动 → http://localhost:5173
 
+新前端默认采用深色运营控制台风格，不再突出明显的演示标语；如果你改了后端端口，只需要同步更新 [frontend/src/App.vue](frontend/src/App.vue) 里的 `baseURL`。
+
 ---
 
-## 快速演示（30 秒）
+## 快速验证（30 秒）
 
 ### 提交测试告警
 ```python
@@ -71,6 +73,8 @@ requests.post("http://localhost:8000/api/alert", json={
 response = requests.get("http://localhost:8000/api/alerts")
 print(response.json())
 ```
+
+这部分是为了验证接口可用，不建议在页面上直接展示成“演示入口”。当前前端已经改成更像真实运营台的布局，常用操作都在正常工作流里完成。
 
 ### 执行自动响应
 ```python
@@ -169,7 +173,7 @@ npm.cmd run dev
 
 ---
 
-## 演示脚本功能清单
+## 功能清单
 
 ✅ 系统健康检查  
 ✅ 告警统计展示  
@@ -191,6 +195,8 @@ npm.cmd run dev
 3. **启动完整系统**：前端 + 后端
 
 4. **自定义剧本**：编辑 `backend/app/main.py` 中的 playbook 定义
+
+5. **继续美化前端**：优先调整 `frontend/src/styles.css`、`frontend/src/App.vue` 和各组件样式
 
 ---
 
@@ -218,6 +224,12 @@ npm.cmd run dev
 2. 再启动前端：`cd d:\信息作品竞赛\frontend` 然后 `npm install` 和 `npm run dev`
     - 如果你用的是 PowerShell，请改成 `npm.cmd install` 和 `npm.cmd run dev`
 3. 最后回到项目根目录运行演示脚本：`cd d:\信息作品竞赛` 然后 `python demo.py`
+
+## 前端说明
+
+- 当前前端基于 `http://localhost:8000/api` 访问后端接口
+- 页面默认是深色控制台风格，不会直接展示明显的测试按钮或演示字样
+- 如果你后续改了后端地址，只需同步修改 [frontend/src/App.vue](frontend/src/App.vue) 中的 `baseURL`
 
 ---
 

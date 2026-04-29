@@ -1,46 +1,42 @@
-<template>
-  <div>
-    <h2>🚨 安全告警列表</h2>
-    <button @click="$emit('refresh')" style="margin-bottom: 20px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">🔄 刷新告警</button>
-    
-    <div v-if="alerts.length === 0" style="text-align: center; padding: 40px; color: #999;">
-      <div style="font-size: 48px; margin-bottom: 10px;">✨</div>
-      <p>暂无告警，系统运行正常</p>
+﻿<template>
+  <div class="alert-view">
+    <div class="header-actions">
+      <h2>告警流监控 (THREAT ALERTS)</h2>
+      <button class="cyber-btn" @click="('refresh')">SYNC STREAM</button>
     </div>
 
-    <div v-else>
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
-            <th style="padding: 12px; text-align: left;">🆔 ID</th>
-            <th style="padding: 12px; text-align: left;">📌 类型</th>
-            <th style="padding: 12px; text-align: left;">🎯 IOC</th>
-            <th style="padding: 12px; text-align: left;">👤 用户/主机</th>
-            <th style="padding: 12px; text-align: left;">⚠️ 严重级别</th>
-            <th style="padding: 12px; text-align: left;">📊 状态</th>
-            <th style="padding: 12px; text-align: left;">🕐 时间</th>
-            <th style="padding: 12px; text-align: center;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="alert in alerts" :key="alert.id" style="border-bottom: 1px solid #eee; hover: { background: '#f9f9f9' }">
-            <td style="padding: 12px;">{{ alert.id }}</td>
-            <td style="padding: 12px;">{{ formatType(alert.type) }}</td>
-            <td style="padding: 12px; font-family: monospace; font-size: 12px; word-break: break-all;">{{ alert.ioc }}</td>
-            <td style="padding: 12px;">{{ alert.user || alert.host || '-' }}</td>
-            <td style="padding: 12px;">
-              <span :style="getSeverityStyle(alert.severity)">{{ formatSeverity(alert.severity) }}</span>
-            </td>
-            <td style="padding: 12px;">
-              <span :style="getStatusStyle(alert.status)">{{ formatStatus(alert.status) }}</span>
-            </td>
-            <td style="padding: 12px; font-size: 12px;">{{ formatTime(alert.created_at) }}</td>
-            <td style="padding: 12px; text-align: center;">
-              <button @click="$emit('create-ticket', alert.id)" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">创建工单</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="cyber-panel">
+      <div class="table-container">
+        <table class="cyber-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>TYPE</th>
+              <th>SEVERITY</th>
+              <th>INDICATOR (IOC)</th>
+              <th>TIME</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="alert in alerts" :key="alert.id">
+              <td class="mono neon-cyan-text">#{{ alert.id }}</td>
+              <td>{{ alert.type.toUpperCase() }}</td>
+              <td>
+                <span class="cyber-badge" :class="getSeverityClass(alert.severity)">{{ alert.severity }}</span>
+              </td>
+              <td class="mono">{{ alert.ioc }}</td>
+              <td class="mono text-muted">{{ formatTime(alert.created_at) }}</td>
+              <td>
+                <button class="cyber-btn" style="font-size:0.75rem; padding:0.4rem 0.8rem" @click="('create-ticket', alert.id)">DISPATCH TICKET</button>
+              </td>
+            </tr>
+            <tr v-if="!alerts.length">
+              <td colspan="6" class="empty-row">SYSTEM CLEAR - NO ACTIVE ALERTS</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -48,59 +44,39 @@
 <script>
 export default {
   name: 'AlertList',
-  props: {
-    alerts: Array
-  },
+  props: { alerts: { type: Array, default: () => [] } },
   methods: {
-    formatType(type) {
-      const typeMap = {
-        'phishing': '🎣 钓鱼',
-        'ransomware': '🔒 勒索',
-        'malware': '🦠 恶意软件',
-        'suspicious_ip': '❌ 可疑IP'
-      }
-      return typeMap[type] || type
+    formatTime(str) {
+      const d = new Date(str)
+      return d.toLocaleTimeString('en-US', { hour12: false })
     },
-    formatSeverity(severity) {
-      const severityMap = {
-        'low': '🟢 低',
-        'medium': '🟡 中',
-        'high': '🟠 高',
-        'critical': '🔴 严重'
-      }
-      return severityMap[severity] || severity
-    },
-    formatStatus(status) {
-      const statusMap = {
-        'open': '❌ 未处理',
-        'in_progress': '⏳ 处理中',
-        'resolved': '✅ 已解决',
-        'closed': '🔒 已关闭'
-      }
-      return statusMap[status] || status
-    },
-    formatTime(timestamp) {
-      const date = new Date(timestamp)
-      return date.toLocaleString('zh-CN')
-    },
-    getSeverityStyle(severity) {
-      const styles = {
-        'low': { background: '#d4edda', color: '#155724', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' },
-        'medium': { background: '#fff3cd', color: '#856404', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' },
-        'high': { background: '#ffe5cc', color: '#cc5200', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' },
-        'critical': { background: '#f8d7da', color: '#721c24', padding: '4px 8px', borderRadius: '3px', fontSize: '12px', fontWeight: 'bold' }
-      }
-      return styles[severity] || {}
-    },
-    getStatusStyle(status) {
-      const styles = {
-        'open': { background: '#ff6b6b', color: 'white', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' },
-        'in_progress': { background: '#4ecdc4', color: 'white', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' },
-        'resolved': { background: '#51cf66', color: 'white', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' },
-        'closed': { background: '#a9a9a9', color: 'white', padding: '4px 8px', borderRadius: '3px', fontSize: '12px' }
-      }
-      return styles[status] || {}
+    getSeverityClass(sev) {
+      if (sev === 'high' || sev === 'critical') return 'high'
+      if (sev === 'medium') return 'medium'
+      return 'low'
     }
   }
 }
 </script>
+
+<style scoped>
+.alert-view { display: flex; flex-direction: column; gap: 2rem; }
+.header-actions { display: flex; justify-content: space-between; align-items: center; }
+
+.table-container { overflow-x: auto; }
+.cyber-table {
+  width: 100%; border-collapse: collapse; text-align: left;
+}
+.cyber-table th {
+  font-family: var(--font-tech); font-size: 0.9rem; color: var(--neon-cyan); letter-spacing: 1px;
+  padding: 1rem; border-bottom: 2px solid var(--line-glow);
+}
+.cyber-table td { padding: 1rem; border-bottom: 1px solid var(--line-light); font-size: 0.95rem; }
+.cyber-table tr:hover td { background: rgba(0, 102, 238, 0.05); }
+
+.mono { font-family: monospace; }
+.neon-cyan-text { color: var(--neon-cyan); }
+.text-muted { color: var(--text-muted); }
+.empty-row { text-align: center; padding: 3rem !important; font-family: var(--font-tech); letter-spacing: 2px; color: var(--neon-green); }
+</style>
+

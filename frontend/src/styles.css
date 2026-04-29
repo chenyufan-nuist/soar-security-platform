@@ -1,0 +1,111 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Jura:wght@400;500;600;700&family=Orbitron:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  --bg-deep: #f0f6fa;
+  --bg-panel: rgba(255, 255, 255, 0.7);
+  --bg-panel-hover: rgba(255, 255, 255, 0.95);
+  --line-light: rgba(0, 110, 255, 0.2);
+  --line-glow: rgba(0, 110, 255, 0.5);
+  --text-main: #112a46;
+  --text-muted: #5c7996;
+  --neon-cyan: #0066ee;
+  --neon-cyan-glow: 0 0 10px rgba(0, 102, 238, 0.3);
+  --neon-green: #00a63d;
+  --neon-green-glow: 0 0 10px rgba(0, 166, 61, 0.3);
+  --neon-pink: #e6005c;
+  --neon-pink-glow: 0 0 10px rgba(230, 0, 92, 0.3);
+  --neon-yellow: #d88100;
+  --font-tech: 'Rajdhani', 'Orbitron', 'Jura', sans-serif;
+  --font-body: 'Jura', system-ui, -apple-system, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  background-color: var(--bg-deep);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(0, 102, 238, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(230, 0, 92, 0.05), transparent 40%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: 
+    linear-gradient(rgba(0, 102, 238, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 102, 238, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-tech); margin-top: 0; text-transform: uppercase; letter-spacing: 1px; }
+
+h1 { font-size: 2rem; color: var(--neon-cyan); text-shadow: var(--neon-cyan-glow); margin-bottom: 0.5rem; }
+h2 { font-size: 1.5rem; color: var(--text-main); border-bottom: 1px solid var(--line-light); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+
+.cyber-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.cyber-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+  opacity: 0.5;
+}
+.cyber-panel:hover {
+  border-color: var(--line-glow);
+  box-shadow: inset 0 0 20px rgba(0, 102, 238, 0.05), 0 5px 15px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+
+.cyber-btn {
+  background: rgba(0, 102, 238, 0.05);
+  color: var(--neon-cyan);
+  font-family: var(--font-tech); font-size: 1rem; font-weight: 600; letter-spacing: 1px;
+  border: 1px solid var(--neon-cyan); border-radius: var(--radius-sm);
+  padding: 0.6rem 1.2rem; cursor: pointer; transition: var(--transition); text-transform: uppercase;
+}
+.cyber-btn:hover { background: rgba(0, 102, 238, 0.15); box-shadow: var(--neon-cyan-glow); }
+
+.cyber-badge {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px;
+  font-family: var(--font-tech); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid currentColor;
+}
+.cyber-badge.high { color: var(--neon-pink); background: rgba(230, 0, 92, 0.1); box-shadow: var(--neon-pink-glow); }
+.cyber-badge.medium { color: var(--neon-yellow); background: rgba(216, 129, 0, 0.1); }
+.cyber-badge.low { color: var(--neon-cyan); background: rgba(0, 102, 238, 0.1); }
+.cyber-badge.safe { color: var(--neon-green); background: rgba(0, 166, 61, 0.1); box-shadow: var(--neon-green-glow); }
+
+.scanline {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 10vh;
+  background: linear-gradient(to bottom, transparent, rgba(0, 102, 238, 0.05), transparent);
+  animation: scanline 8s linear infinite; pointer-events: none; z-index: 9999;
+}
+@keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
+

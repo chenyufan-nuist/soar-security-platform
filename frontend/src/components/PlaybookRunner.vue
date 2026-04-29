@@ -1,58 +1,52 @@
 <template>
-  <div>
-    <h2>⚙️ 剧本执行系统</h2>
-    
-    <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-      <h3 style="margin-top: 0;">🎬 选择告警和剧本</h3>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: bold;">📌 选择告警:</label>
-          <select v-model="selectedAlertId" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-            <option value="">-- 选择告警 --</option>
-            <option v-for="alert in alerts" :key="alert.id" :value="alert.id">
-              [{{ alert.type }}] {{ alert.ioc }} (ID: {{ alert.id }})
-            </option>
+  <div class="playbook-view">
+    <div class="header-actions">
+      <h2>自动化编排引擎 (AUTOMATION ENGINE)</h2>
+      <button class="cyber-btn" @click="$emit('refresh')">LOAD MODULES</button>
+    </div>
+
+    <div class="content-grid">
+      <!-- Settings Panel -->
+      <div class="cyber-panel">
+        <h3>执行配置 (EXECUTION CONFIG)</h3>
+        <div class="form-group">
+          <label>Target Alert ID</label>
+          <select v-model="selectedAlert" class="cyber-select">
+            <option value="" disabled>Select Target</option>
+            <option v-for="a in activeAlerts" :key="a.id" :value="a.id">[{{ a.id }}] {{ a.type }} - {{ a.ioc }}</option>
           </select>
+        </div>
+
+        <div class="form-group">
+          <label>Playbook Module</label>
+          <select v-model="selectedPlaybook" class="cyber-select">
+            <option value="" disabled>Select Module</option>
+            <option v-for="p in playbooks" :key="p.name" :value="p.name">{{ p.name }}</option>
+          </select>
+        </div>
+
+        <div class="action-row">
+          <button class="cyber-btn danger exec-btn" :disabled="!canExecute || executionState === 'running'" @click="runPlaybook">
+            {{ execButtonText }}
+          </button>
         </div>
         
-        <div>
-          <label style="display: block; margin-bottom: 8px; font-weight: bold;">📚 选择剧本:</label>
-          <select v-model="selectedPlaybook" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-            <option value="">-- 选择剧本 --</option>
-            <option v-for="playbook in playbooks" :key="playbook.id" :value="playbook.name">
-              {{ playbook.name }} - {{ playbook.description }}
-            </option>
-          </select>
+        <div v-if="executionState === 'success'" class="alert-msg success-msg">
+          [SUCCESS] Playbook executed and log appended.
+        </div>
+        <div v-if="executionState === 'failed'" class="alert-msg error-msg">
+          [ERROR] Execution failed or timed out.
         </div>
       </div>
 
-      <button @click="executePlaybook" :disabled="!selectedAlertId || !selectedPlaybook" style="padding: 12px 30px; background: selectedAlertId && selectedPlaybook ? '#667eea' : '#ccc'; color: white; border: none; border-radius: 4px; cursor: selectedAlertId && selectedPlaybook ? 'pointer' : 'not-allowed'; font-weight: bold; font-size: 16px;">
-        🚀 执行剧本
-      </button>
-    </div>
-
-    <div v-if="executionResult" style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 20px; border-radius: 4px; margin-top: 20px;">
-      <h3 style="margin-top: 0; color: #2e7d32;">✅ 执行结果</h3>
-      <div style="background: white; padding: 15px; border-radius: 4px; margin-top: 15px; max-height: 400px; overflow-y: auto;">
-        <pre style="margin: 0;">{{ JSON.stringify(executionResult, null, 2) }}</pre>
-      </div>
-    </div>
-
-    <div v-if="playbooks.length === 0" style="text-align: center; padding: 40px; color: #999;">
-      <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
-      <p>暂无可用剧本</p>
-    </div>
-
-    <div v-if="playbooks.length > 0" style="margin-top: 30px;">
-      <h3>📚 可用剧本列表</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-        <div v-for="playbook in playbooks" :key="playbook.id" style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h4 style="margin-top: 0; color: #667eea;">{{ playbook.name }}</h4>
-          <p style="color: #666; font-size: 14px; margin: 8px 0;">{{ playbook.description }}</p>
-          <p style="color: #999; font-size: 12px; margin: 8px 0;"><strong>触发类型:</strong> {{ playbook.alert_type }}</p>
-          <div style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; word-break: break-all; max-height: 150px; overflow-y: auto;">
-            {{ formatPlaybookContent(playbook.content) }}
+      <!-- Playbook Library -->
+      <div class="cyber-panel library-panel">
+        <h3>可用剧本库 (PLAYBOOK LIBRARY)</h3>
+        <div class="pb-list">
+          <div v-for="p in playbooks" :key="p.name" class="pb-item" :class="{'active-pb': selectedPlaybook === p.name}" @click="selectedPlaybook = p.name">
+            <div class="pb-name">{{ p.name }}</div>
+            <div class="pb-desc">{{ p.description || 'Automated response module.' }}</div>
+            <div class="pb-meta">STATUS: <span class="neon-green">READY</span></div>
           </div>
         </div>
       </div>
@@ -64,35 +58,85 @@
 export default {
   name: 'PlaybookRunner',
   props: {
-    alerts: Array,
-    playbooks: Array
+    alerts: { type: Array, default: () => [] },
+    playbooks: { type: Array, default: () => [] },
+    executionState: { type: String, default: null }
   },
   data() {
     return {
-      selectedAlertId: '',
-      selectedPlaybook: '',
-      executionResult: null
+      selectedAlert: '',
+      selectedPlaybook: ''
+    }
+  },
+  computed: {
+    activeAlerts() {
+      return this.alerts.filter(a => a.status === 'open' || a.status === 'new')
+    },
+    canExecute() {
+      return this.selectedAlert && this.selectedPlaybook
+    },
+    execButtonText() {
+      if (this.executionState === 'running') return 'INITIALIZING SEQUENCE...'
+      return 'AUTHORIZE DEPLOYMENT'
     }
   },
   methods: {
-    executePlaybook() {
-      if (!this.selectedAlertId || !this.selectedPlaybook) {
-        alert('请选择告警和剧本')
-        return
-      }
-      this.$emit('execute', {
-        alert_id: parseInt(this.selectedAlertId),
-        playbook_name: this.selectedPlaybook
-      })
-    },
-    formatPlaybookContent(content) {
-      try {
-        const obj = JSON.parse(content)
-        return JSON.stringify(obj, null, 2).substring(0, 200) + '...'
-      } catch {
-        return content.substring(0, 200) + '...'
-      }
+    runPlaybook() {
+      this.$emit('execute', { alertId: this.selectedAlert, playbookName: this.selectedPlaybook })
     }
   }
 }
 </script>
+
+<style scoped>
+.playbook-view { display: flex; flex-direction: column; gap: 2rem; }
+.header-actions { display: flex; justify-content: space-between; align-items: center; }
+
+.content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+
+.form-group { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; }
+.form-group label { font-family: var(--font-tech); color: var(--neon-cyan); letter-spacing: 1px; font-size: 0.9rem; }
+
+.cyber-select {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--line-light);
+  color: var(--text-main);
+  padding: 0.8rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-tech);
+  font-size: 1rem;
+  outline: none;
+  transition: var(--transition);
+}
+.cyber-select:focus { border-color: var(--neon-cyan); box-shadow: var(--neon-cyan-glow); }
+.cyber-select option { background: var(--bg-deep); border-bottom: 1px solid var(--line-light); }
+
+.action-row { margin-top: 2rem; }
+.exec-btn { width: 100%; padding: 1rem; font-size: 1.1rem; letter-spacing: 2px; }
+.exec-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: gray; color: gray; box-shadow: none; text-shadow: none; background: transparent; }
+
+.alert-msg { margin-top: 1rem; padding: 1rem; border: 1px dashed; font-family: var(--font-tech); letter-spacing: 1px; font-weight: 600; }
+.success-msg { color: var(--neon-green); border-color: var(--neon-green); background: rgba(0,166,61,0.1); }
+.error-msg { color: var(--neon-pink); border-color: var(--neon-pink); background: rgba(230,0,92,0.1); }
+
+.pb-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+.pb-item {
+  border: 1px solid var(--line-light);
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  background: rgba(0, 102, 238, 0.02);
+}
+.pb-item:hover, .pb-item.active-pb {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 102, 238, 0.08);
+  box-shadow: inset 0 0 10px rgba(0,102,238,0.1);
+  transform: translateX(5px);
+}
+
+.pb-name { font-family: var(--font-tech); font-size: 1.1rem; color: var(--neon-cyan); margin-bottom: 0.5rem; text-transform: uppercase; }
+.pb-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.8rem; }
+.pb-meta { font-family: var(--font-tech); font-size: 0.8rem; letter-spacing: 1px; }
+.neon-green { color: var(--neon-green); text-shadow: var(--neon-green-glow); }
+</style>
