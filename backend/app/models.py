@@ -16,8 +16,8 @@ class Alert(Base):
     severity = Column(String(20), default="medium")  # low, medium, high, critical
     status = Column(String(20), default="open")  # open, in_progress, resolved, closed
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class Ticket(Base):
@@ -32,8 +32,8 @@ class Ticket(Base):
     status = Column(String(20), default="open")  # open, in_progress, resolved, closed
     actions = Column(Text, nullable=True)  # JSON 格式的已执行动作列表
     report = Column(Text, nullable=True)  # 处置报告
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class Playbook(Base):
@@ -46,8 +46,8 @@ class Playbook(Base):
     content = Column(Text)  # YAML/JSON 格式的剧本定义
     alert_type = Column(String(50))  # 触发的告警类型
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 
 class ExecutionLog(Base):
@@ -60,4 +60,4 @@ class ExecutionLog(Base):
     action = Column(String(100))
     status = Column(String(20))  # success, failed
     result = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)

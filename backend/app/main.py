@@ -178,7 +178,7 @@ async def update_ticket(ticket_id: int, update: TicketUpdate, db: Session = Depe
     if update.report:
         ticket.report = update.report
     
-    ticket.updated_at = datetime.utcnow()
+    ticket.updated_at = datetime.now()
     db.commit()
     db.refresh(ticket)
     return ticket
@@ -231,7 +231,7 @@ async def health_check():
     """系统健康检查"""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow(),
+        "timestamp": datetime.now(),
         "service": "SOAR 平台"
     }
 

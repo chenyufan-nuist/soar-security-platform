@@ -16,12 +16,12 @@ class AlertService:
         recent_alert = self.db.query(AlertModel).filter(
             AlertModel.ioc == alert.ioc,
             AlertModel.type == alert.type,
-            AlertModel.created_at >= datetime.utcnow() - timedelta(minutes=5)
+            AlertModel.created_at >= datetime.now() - timedelta(minutes=5)
         ).first()
         
         if recent_alert:
             # 如果存在，则合并（更新状态为已聚合）
-            recent_alert.updated_at = datetime.utcnow()
+            recent_alert.updated_at = datetime.now()
             self.db.commit()
             return recent_alert
         
@@ -41,6 +41,6 @@ class AlertService:
         alert = self.get_alert_by_id(alert_id)
         if alert:
             alert.status = status
-            alert.updated_at = datetime.utcnow()
+            alert.updated_at = datetime.now()
             self.db.commit()
         return alert

@@ -31,9 +31,6 @@
           </button>
         </div>
         
-        <div v-if="executionState === 'success'" class="alert-msg success-msg">
-          [SUCCESS] Playbook executed and log appended.
-        </div>
         <div v-if="executionState === 'failed'" class="alert-msg error-msg">
           [ERROR] Execution failed or timed out.
         </div>
@@ -51,6 +48,26 @@
         </div>
       </div>
     </div>
+
+    <!-- Execution Result Modal -->
+    <div v-if="executionState === 'success' && executionResult" class="modal-overlay">
+      <div class="modal-content cyber-panel">
+        <h3>⚡ 执行结果 (EXECUTION REPORT)</h3>
+        <div class="result-list">
+          <div v-for="(action, index) in executionResult" :key="index" class="result-item" :class="action.status">
+            <div class="result-header">
+              <span class="step-num">STEP {{ index + 1 }}</span>
+              <span class="action-name">{{ action.action }}</span>
+              <span class="status-badge">{{ action.status.toUpperCase() }}</span>
+            </div>
+            <div class="result-msg">> {{ action.message }}</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="cyber-btn" @click="$emit('close-result')">ACKNOWLEDGE & CLOSE</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -60,7 +77,8 @@ export default {
   props: {
     alerts: { type: Array, default: () => [] },
     playbooks: { type: Array, default: () => [] },
-    executionState: { type: String, default: null }
+    executionState: { type: String, default: null },
+    executionResult: { type: Array, default: () => [] }
   },
   data() {
     return {
@@ -139,4 +157,38 @@ export default {
 .pb-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.8rem; }
 .pb-meta { font-family: var(--font-tech); font-size: 0.8rem; letter-spacing: 1px; }
 .neon-green { color: var(--neon-green); text-shadow: var(--neon-green-glow); }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 5, 15, 0.85); backdrop-filter: blur(5px);
+  display: flex; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-content {
+  width: 600px; max-width: 90vw; background: rgba(0, 15, 30, 0.95) !important;
+  border: 1px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0, 204, 255, 0.2);
+  display: flex; flex-direction: column; gap: 1.5rem;
+}
+.modal-content h3 { color: var(--neon-cyan); margin-bottom: 0; }
+
+.result-list { display: flex; flex-direction: column; gap: 1rem; max-height: 50vh; overflow-y: auto; padding-right: 1rem; }
+.result-item {
+  border: 1px solid var(--line-light); padding: 1rem;
+  border-left: 4px solid var(--neon-cyan); background: rgba(255,255,255,0.02);
+}
+.result-item.success { border-left-color: var(--neon-green); background: rgba(0,255,100,0.05); }
+.result-item.failed { border-left-color: var(--neon-pink); background: rgba(255,0,100,0.05); }
+
+.result-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.8rem; }
+.step-num { font-family: var(--font-tech); font-size: 0.8rem; color: var(--text-muted); }
+.action-name { font-weight: bold; flex: 1; text-transform: uppercase; color: var(--text-main); }
+.status-badge {
+  font-family: var(--font-tech); font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 4px;
+}
+.success .status-badge { background: var(--neon-green); color: black; }
+.failed .status-badge { background: var(--neon-pink); color: white; }
+
+.result-msg { font-family: var(--font-tech); font-size: 0.9rem; color: var(--text-muted); word-break: break-all; }
+
+.modal-actions { display: flex; justify-content: flex-end; margin-top: 1rem; }
 </style>

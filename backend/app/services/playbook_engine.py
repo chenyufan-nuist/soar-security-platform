@@ -149,7 +149,7 @@ class PlaybookEngine:
             "event_type": alert.type,
             "ioc": alert.ioc,
             "severity": alert.severity,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "status": "已处置",
             "actions_taken": execution_results,
             "summary": f"对{alert.type}事件进行了自动响应，共执行{len(execution_results)}个处置动作。"

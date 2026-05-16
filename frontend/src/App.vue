@@ -34,7 +34,7 @@
       <Dashboard v-if="currentTab === 'dashboard'" :stats="stats" :alerts="alerts" :tickets="tickets" @refresh="fetchAll" />
       <AlertList v-else-if="currentTab === 'alerts'" :alerts="alerts" @refresh="fetchAlerts" @create-ticket="handleCreateTicket" />
       <TicketManagement v-else-if="currentTab === 'tickets'" :tickets="tickets" @refresh="fetchTickets" />
-      <PlaybookRunner v-else :alerts="alerts" :playbooks="playbooks" :execution-state="executionState" @execute="executePlaybook" @refresh="fetchAll" />
+      <PlaybookRunner v-else :alerts="alerts" :playbooks="playbooks" :execution-state="executionState" :execution-result="executionResult" @execute="executePlaybook" @close-result="closePlaybookResult" @refresh="fetchAll" />
     </main>
   </div>
 </template>
@@ -57,6 +57,7 @@ export default {
       tickets: [],
       playbooks: [],
       executionState: null,
+      executionResult: null,
       baseURL: 'http://localhost:8000/api',
       navItems: [
         { key: 'dashboard', label: 'Global View' },
@@ -94,7 +95,7 @@ export default {
     async fetchPlaybooks() {
       try {
         const res = await axios.get(`${this.baseURL}/playbooks`)
-        this.playbooks = res.data.playbooks || []
+        this.playbooks = Array.isArray(res.data) ? res.data : (res.data?.playbooks || [])
       } catch (err) {
         // Mock if not implemented in backend
         this.playbooks = [
@@ -118,15 +119,21 @@ export default {
           alert_id: alertId,
           playbook_name: playbookName
         })
-        setTimeout(() => {
-          this.executionState = 'success'
-          this.fetchAll()
-          setTimeout(() => { this.executionState = null }, 3000)
-        }, 1500)
+        
+        // Pass the result down to display in the modal
+        this.executionResult = res.data.actions || []
+        this.executionState = 'success'
+        this.fetchAll()
+        
+        // Keep the modal open until the user closes it manually (no timeout for success closing)
       } catch (err) {
         this.executionState = 'failed'
         setTimeout(() => { this.executionState = null }, 3000)
       }
+    },
+    closePlaybookResult() {
+      this.executionState = null
+      this.executionResult = null
     }
   },
   mounted() {
