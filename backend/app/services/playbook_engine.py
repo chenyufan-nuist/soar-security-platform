@@ -55,6 +55,11 @@ class PlaybookEngine:
             report=self._generate_report(alert, execution_results)
         )
         self.db.add(ticket)
+        
+        # 将原始告警状态也标记为已解决
+        alert.status = "resolved"
+        alert.updated_at = datetime.now()
+        
         self.db.commit()
         
         return execution_results
