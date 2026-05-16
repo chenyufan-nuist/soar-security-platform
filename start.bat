@@ -52,7 +52,7 @@ echo [5/5] 启动 Vue3 前端服务...
 echo 📍 前端地址: http://localhost:5173
 echo.
 echo 检查 npm...
-npm --version >nul 2>&1
+npm.cmd --version >nul 2>&1
 if errorlevel 1 (
     echo ❌ 错误：未找到 npm，请先安装 Node.js
     pause
@@ -62,11 +62,11 @@ if errorlevel 1 (
 cd frontend
 if not exist "node_modules" (
     echo 首次安装依赖，请稍候...
-    call npm install
+    call npm.cmd install
 ) else (
     echo 依赖已准备就绪
 )
-start cmd /k "npm run dev"
+start cmd /k "npm.cmd run dev"
 
 echo.
 echo =====================================
