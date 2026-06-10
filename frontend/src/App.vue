@@ -36,6 +36,8 @@
       <TicketManagement v-else-if="currentTab === 'tickets'" :tickets="tickets" @refresh="fetchTickets" />
       <PlaybookRunner v-else :alerts="alerts" :playbooks="playbooks" :execution-state="executionState" :execution-result="executionResult" @execute="executePlaybook" @close-result="closePlaybookResult" @refresh="fetchAll" />
     </main>
+
+    <AgentChat />
   </div>
 </template>
 
@@ -45,10 +47,11 @@ import Dashboard from './components/Dashboard.vue'
 import AlertList from './components/AlertList.vue'
 import TicketManagement from './components/TicketManagement.vue'
 import PlaybookRunner from './components/PlaybookRunner.vue'
+import AgentChat from './components/AgentChat.vue'
 
 export default {
   name: 'App',
-  components: { Dashboard, AlertList, TicketManagement, PlaybookRunner },
+  components: { Dashboard, AlertList, TicketManagement, PlaybookRunner, AgentChat },
   data() {
     return {
       currentTab: 'dashboard',
@@ -58,7 +61,7 @@ export default {
       playbooks: [],
       executionState: null,
       executionResult: null,
-      baseURL: 'http://localhost:8000/api',
+      baseURL: '/api',
       navItems: [
         { key: 'dashboard', label: 'Global View' },
         { key: 'alerts', label: 'Threat Alerts' },
@@ -136,9 +139,20 @@ export default {
       this.executionResult = null
     }
   },
+  watch: {
+    currentTab() {
+      // 切换 Tab 时立即刷新数据，保证演示画面实时
+      this.fetchAll()
+    }
+  },
   mounted() {
     this.fetchAll()
-    setInterval(this.fetchAll, 15000)
+    this._pollTimer = setInterval(this.fetchAll, 15000)
+  },
+  beforeUnmount() {
+    if (this._pollTimer) {
+      clearInterval(this._pollTimer)
+    }
   }
 }
 </script>
