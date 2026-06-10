@@ -2,7 +2,7 @@
   <div class="alert-view">
     <div class="header-actions">
       <h2>告警流监控 (THREAT ALERTS)</h2>
-      <button class="cyber-btn" @click="('refresh')">SYNC STREAM</button>
+      <button class="cyber-btn" @click="$emit('refresh')">SYNC STREAM</button>
     </div>
 
     <div class="cyber-panel">
@@ -28,7 +28,7 @@
               <td class="mono">{{ alert.ioc }}</td>
               <td class="mono text-muted">{{ formatTime(alert.created_at) }}</td>
               <td>
-                <button class="cyber-btn" style="font-size:0.75rem; padding:0.4rem 0.8rem" @click="('create-ticket', alert.id)">DISPATCH TICKET</button>
+                <button class="cyber-btn" style="font-size:0.75rem; padding:0.4rem 0.8rem" @click="$emit('create-ticket', alert.id)">DISPATCH TICKET</button>
               </td>
             </tr>
             <tr v-if="!alerts.length">

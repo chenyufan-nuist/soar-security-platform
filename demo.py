@@ -8,8 +8,15 @@ SOAR 平台 - 完整演示脚本
 import requests
 import json
 import time
+import sys
+import os
 from typing import Dict, Any
 from datetime import datetime
+
+# 修复 Windows 终端 GBK 编码问题
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    os.system('chcp 65001 > nul')
 
 # 配置
 API_BASE = "http://localhost:8000"
@@ -133,35 +140,8 @@ def scenario_1_phishing():
     
     time.sleep(1)
     
-    # 执行自动响应剧本
-    print_info("2️⃣  触发自动响应剧本...")
-    result = execute_playbook(alert['id'], 'phishing_response')
+    print_info("提示：告警已生成。请前往浏览器前端的【Threat Alerts】和【Automation Engine】手动执行剧本！")
     
-    if result.get('status') == 'success':
-        print_success(f"剧本执行成功，共执行 {len(result['actions'])} 个处置动作")
-        print("\n📋 执行的动作：")
-        for action in result['actions']:
-            status_icon = "✅" if action['status'] == 'success' else "❌"
-            print(f"  {status_icon} {action['action']}: {action['message']}")
-    
-    time.sleep(1)
-    
-    # 查看生成的工单
-    print_info("3️⃣  查看自动生成的工单...")
-    tickets = get_tickets()
-    if tickets:
-        latest = tickets[0]
-        print_success(f"工单已生成 (ID: {latest['id']})")
-        print(f"   标题: {latest['title']}")
-        print(f"   状态: {latest['status']}")
-        if latest.get('report'):
-            print(f"\n📄 处置报告:")
-            try:
-                report = json.loads(latest['report'])
-                print(json.dumps(report, ensure_ascii=False, indent=3))
-            except:
-                pass
-
 def scenario_2_ransomware():
     """演示场景2：勒索软件"""
     print_section("🎯 演示场景 2 - 勒索软件自动隔离")
@@ -187,26 +167,7 @@ def scenario_2_ransomware():
     print(f"   严重级别: {alert['severity']}")
     
     time.sleep(1)
-    
-    # 执行自动响应剧本
-    print_info("2️⃣  触发自动隔离剧本...")
-    result = execute_playbook(alert['id'], 'ransomware_response')
-    
-    if result.get('status') == 'success':
-        print_success(f"剧本执行成功，共执行 {len(result['actions'])} 个处置动作")
-        print("\n📋 执行的响应动作：")
-        for action in result['actions']:
-            status_icon = "✅" if action['status'] == 'success' else "❌"
-            print(f"  {status_icon} {action['action']}: {action['message']}")
-    
-    time.sleep(1)
-    
-    # 显示告警统计
-    print_info("3️⃣  查看系统统计...")
-    stats = get_stats()
-    print(f"   总告警数: {stats.get('total', 0)}")
-    print(f"   未处理: {stats.get('open', 0)}")
-    print(f"   已解决: {stats.get('resolved', 0)}")
+    print_info("提示：这又生成了一条由勒索软件触发的告警。请前往前台体验第二个 Playbook。")
 
 def show_system_overview():
     """显示系统概览"""

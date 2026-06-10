@@ -2,7 +2,7 @@
   <div class="ticket-view">
     <div class="header-actions">
       <h2>工单调度中心 (TICKET DISPATCH)</h2>
-      <button class="cyber-btn" @click="('refresh')">FETCH TICKETS</button>
+      <button class="cyber-btn" @click="$emit('refresh')">FETCH TICKETS</button>
     </div>
 
     <div class="cyber-panel">

@@ -2,7 +2,7 @@
   <div class="dashboard-view">
     <div class="header-actions">
       <h2>GLOBAL态势感知 (GLOBAL VIEW)</h2>
-      <button class="cyber-btn" @click="('refresh')">SCAN / REFRESH</button>
+      <button class="cyber-btn" @click="$emit('refresh')">SCAN / REFRESH</button>
     </div>
 
     <!-- Top Stats Row -->

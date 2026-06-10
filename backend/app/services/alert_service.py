@@ -22,6 +22,7 @@ class AlertService:
         if recent_alert:
             # 如果存在，则合并（更新状态为已聚合）
             recent_alert.updated_at = datetime.now()
+            recent_alert.status = "open"  # 重新打开告警，确保前端可用
             self.db.commit()
             return recent_alert
         

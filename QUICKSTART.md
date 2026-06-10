@@ -1,236 +1,62 @@
-# 🚀 快速启动指南
+# 🚀 SOAR 平台演示录制指南 & 快速启动
 
-## 5 分钟内开始使用 SOAR 平台
+这份文档为您整理了傻瓜式录制实操步骤，配合 `DEMO_SCRIPT.md` 解说词使用，确保录制出的画面干净、流畅。
 
-### 前置条件
-- Python 3.8+
-- npm + Node.js（用于前端，可选）
+## 🛑 录制前准备（清空旧数据）
+为了确保录制出来的界面没有任何之前的测试废数据（从 ID 1 开始算起），在点击“开始录屏”前，请在 VS Code 终端执行以下命令清空历史数据库（此操作非常安全，后端启动时会自动重建全新的空库）：
 
----
-
-## 方式 1：仅启动后端（推荐用于演示）
-
-### 步骤 1：安装依赖（首次）
-```bash
-cd d:\信息作品竞赛\backend
-pip install -r requirements.txt
-```
-
-### 步骤 2：启动服务
-```bash
-python -m uvicorn app.main:app --host localhost --port 8000 --reload
-```
-
-✅ 后端已启动 → http://localhost:8000
-
-### 步骤 3：验证 API
-回到项目根目录后，在新的终端中运行演示脚本：
-```bash
-cd d:\信息作品竞赛
-python demo.py
+```powershell
+Remove-Item backend/soar.db -ErrorAction SilentlyContinue
 ```
 
 ---
 
-## 方式 2：完整启动（后端 + 前端）
+## 🎬 第一步：启动整个前后端（对应演示脚本第一幕）
+开始录制后，在 VS Code 的第一个终端中输入以下命令并回车：
 
-### 第一步：启动后端（在 Terminal 1）
-```bash
-cd d:\信息作品竞赛\backend
-pip install -r requirements.txt
-python -m uvicorn app.main:app --host localhost --port 8000 --reload
+```powershell
+.\start.bat
 ```
 
-### 第二步：启动前端（在 Terminal 2）
-```bash
-cd d:\信息作品竞赛\frontend
-npm.cmd install
-npm.cmd run dev
-```
-
-✅ 前端已启动 → http://localhost:5173
-
-新前端默认采用深色运营控制台风格，不再突出明显的演示标语；如果你改了后端端口，只需要同步更新 [frontend/src/App.vue](frontend/src/App.vue) 里的 `baseURL`。
+* **预期效果**：脚本会自动检查依赖，随后弹出一个新的 CMD 窗口（运行后端 API 端口 8000），紧接着控制台会显示 Vite 启动前端（端口 5173）。
+* **操作**：打开浏览器，输入 `http://localhost:5173`。此时大屏中的各项统计数据应该全是干净的 **0**。
 
 ---
 
-## 快速验证（30 秒）
+## 🎬 第二步：发送模拟告警（对应演示脚本第三幕）
+按照您的解说词，当您原理解说完毕，需要“模拟威胁接入”时：
+1. 回到 VS Code，点击终端面板右上角的 **`+` 号**，新建一个终端页面。
+2. 在新终端里运行我们修改好的发包脚本：
 
-### 提交测试告警
-```python
-import requests
+   ```powershell
+   python demo.py
+   ```
 
-# 提交钓鱼告警
-requests.post("http://localhost:8000/api/alert", json={
-    "type": "phishing",
-    "source": "email_gateway",
-    "user": "test@company.com",
-    "ioc": "http://malicious.com",
-    "severity": "high"
-})
-
-# 获取告警列表
-response = requests.get("http://localhost:8000/api/alerts")
-print(response.json())
-```
-
-这部分是为了验证接口可用，不建议在页面上直接展示成“演示入口”。当前前端已经改成更像真实运营台的布局，常用操作都在正常工作流里完成。
-
-### 执行自动响应
-```python
-# 执行剧本
-requests.post("http://localhost:8000/api/playbook/run", json={
-    "alert_id": 1,
-    "playbook_name": "phishing_response"
-})
-```
+* **预期效果**：控制台会快速打印出成功接到了两条告警（一条钓鱼邮件，一条勒索软件），然后程序会自动退出。**这就是您需要的“发送告警提示”过程。**
 
 ---
 
-## 完整系统文件清单
-
-```
-d:\信息作品竞赛\
-│
-├── 📋 README.md                          # 完整文档
-├── 🚀 QUICKSTART.md                      # 本文件
-├── 🎬 demo.py                            # 自动演示脚本
-├── 🎯 中小企业安全事件自动化响应...SOAR_设计文档.md
-│
-├── 📁 backend/
-│   ├── app/
-│   │   ├── main.py                       # FastAPI 主程序（核心）
-│   │   ├── database.py                   # 数据库配置
-│   │   ├── models.py                     # 数据模型
-│   │   ├── schemas.py                    # API 规范
-│   │   ├── services/
-│   │   │   ├── alert_service.py          # 告警逻辑
-│   │   │   ├── playbook_engine.py        # 剧本执行引擎（核心）
-│   │   │   └── misp_service.py           # 威胁情报接口
-│   │   └── api/
-│   └── requirements.txt
-│
-├── 📁 frontend/
-│   ├── src/
-│   │   ├── App.vue                       # 主组件
-│   │   ├── main.js                       # 入口文件
-│   │   └── components/
-│   │       ├── Dashboard.vue             # 仪表盘
-│   │       ├── AlertList.vue             # 告警列表
-│   │       ├── TicketManagement.vue      # 工单管理
-│   │       └── PlaybookRunner.vue        # 剧本执行
-│   ├── index.html
-│   ├── vite.config.js
-│   └── package.json
-```
+## 🎬 第三步：在前台手动执行剧本（对应演示脚本第四幕）
+1. 迅速切回您的浏览器 `http://localhost:5173` 页面。
+2. 导航到 **Threat Alerts** 页面，此时能看到这两条崭新的大红告警。
+3. 导航到 **Automation Engine** 页面。
+4. 在左侧的 `Target Alert ID` 下拉框中，您会完美地看到下拉列表里躺着两个待处理任务：
+   * `[1] phishing - http://fake-login-portal.com`
+   * `[2] ransomware - 45.77.12.8`
+5. 您可以先选中钓鱼告警，并在下方模块选 `PHISHING_RESPONSE`，点击 **AUTHORIZE DEPLOYMENT** 演示弹窗及阻断过程。
+6. “顺水推舟”地，您还可以紧接着演示选第二个勒索软件告警，触发 `RANSOMWARE RESPONSE` 剧本。
+7. 最后切到 **Dispatch Center** 模块，向评委展示生成的两条全自动处置工单。
 
 ---
 
-## 核心 API 端点
-
-| 方法 | 端点 | 功能 |
-|------|------|------|
-| POST | /api/alert | 接收告警 |
-| GET | /api/alerts | 告警列表 |
-| GET | /api/alerts/stats | 统计信息 |
-| POST | /api/playbook/run | 执行剧本 |
-| GET | /api/tickets | 工单列表 |
-| POST | /api/ticket | 创建工单 |
-| GET | /docs | Swagger 文档 |
-
----
-
-## 常见问题
-
-### Q: 运行 demo.py 时提示连接失败？
-**A:** 确保后端已启动：
-```bash
-cd d:\信息作品竞赛\backend
-python -m uvicorn app.main:app --host localhost --port 8000
-```
-
-### Q: 前端无法加载？
-**A:** 需要 Node.js，[下载安装](https://nodejs.org/)，然后：
-```bash
-cd d:\信息作品竞赛\frontend
-npm install
-npm run dev
-```
-
-如果你在 PowerShell 里遇到 `npm.ps1` 执行策略限制，可以改用：
-```bash
-npm.cmd install
-npm.cmd run dev
-```
-
-如果你更习惯直接输入 `npm install`，也可以把 Terminal 2 换成 cmd 窗口再执行。
-
-### Q: 如何查看 API 文档？
-**A:** 打开 http://localhost:8000/docs（需要后端运行）
-
-### Q: 如何重置所有数据？
-**A:** 删除 `backend/soar.db` 文件后重启后端
-
----
-
-## 功能清单
-
-✅ 系统健康检查  
-✅ 告警统计展示  
-✅ 钓鱼邮件场景演示  
-✅ 勒索软件场景演示  
-✅ 剧本自动执行  
-✅ 工单生成验证  
-✅ 响应报告输出  
-
----
-
-## 下一步
-
-1. **阅读设计文档**：了解系统架构
-    直接打开 [中小企业安全事件自动化响应平台_SOAR_设计文档.md](中小企业安全事件自动化响应平台_SOAR_设计文档.md)
-
-2. **查看 API 文档**：http://localhost:8000/docs
-
-3. **启动完整系统**：前端 + 后端
-
-4. **自定义剧本**：编辑 `backend/app/main.py` 中的 playbook 定义
-
-5. **继续美化前端**：优先调整 `frontend/src/styles.css`、`frontend/src/App.vue` 和各组件样式
-
----
-
-## 技术栈
-
-- **后端**：FastAPI + SQLAlchemy + SQLite
-- **前端**：Vue3 + Vite + Axios
-- **威胁情报**：MISP API 集成（模拟）
-
----
-
-## 联系与支持
-
-此项目为信息安全竞赛作品。
+## 💡 常见问题与快速链接
 
 **快速链接**：
 - 后端 API：http://localhost:8000
 - 前端应用：http://localhost:5173
 - API 文档：http://localhost:8000/docs
-- 演示脚本：`python demo.py`
 
-## Windows 推荐启动顺序
-
-1. 先启动后端：`cd d:\信息作品竞赛\backend` 然后 `python -m uvicorn app.main:app --host localhost --port 8000 --reload`
-2. 再启动前端：`cd d:\信息作品竞赛\frontend` 然后 `npm install` 和 `npm run dev`
-    - 如果你用的是 PowerShell，请改成 `npm.cmd install` 和 `npm.cmd run dev`
-3. 最后回到项目根目录运行演示脚本：`cd d:\信息作品竞赛` 然后 `python demo.py`
-
-## 前端说明
-
-- 当前前端基于 `http://localhost:8000/api` 访问后端接口
-- 页面默认是深色控制台风格，不会直接展示明显的测试按钮或演示字样
-- 如果你后续改了后端地址，只需同步修改 [frontend/src/App.vue](frontend/src/App.vue) 中的 `baseURL`
-
----
+**如果遇到 npm 脚本受限策略：**
+请尝试使用 `npm.cmd install` 或打开传统的 cmd 窗口运行。我们的 `start.bat` 中已经为您修复了这部分适配。
 
 **祝演示顺利！** 🎉
