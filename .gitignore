@@ -22,7 +22,11 @@ node_modules/
 *.sqlite3
 backend/soar.db
 
+# Build artifacts
+frontend/dist/
+
 # OS/Editor
 .DS_Store
 Thumbs.db
 .vscode/
+.claude/

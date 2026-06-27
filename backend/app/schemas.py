@@ -86,3 +86,11 @@ class ExecutionResult(BaseModel):
     action: str
     status: str
     result: Optional[str] = None
+
+
+class AgentChatRequest(BaseModel):
+    messages: List[dict]  # [{"role": "user", "content": "..."}, ...]
+
+
+class AgentChatResponse(BaseModel):
+    reply: str

@@ -80,9 +80,9 @@ echo    • API文档: http://localhost:8000/docs
 echo.
 echo 💡 演示步骤：
 echo    1. 打开浏览器访问 http://localhost:5173
-echo    2. 进入"剧本执行"页面
+echo    2. 进入"响应策略"页面
 echo    3. 提交测试告警或通过 API 提交
-echo    4. 选择剧本后点击"执行"
+echo    4. 选择策略后点击"执行"
 echo    5. 查看工单和报告
 echo.
 echo 🎬 测试告警 API 命令：

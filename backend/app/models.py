@@ -37,13 +37,13 @@ class Ticket(Base):
 
 
 class Playbook(Base):
-    """剧本模型"""
+    """响应策略模型"""
     __tablename__ = "playbooks"
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, index=True)
     description = Column(Text, nullable=True)
-    content = Column(Text)  # YAML/JSON 格式的剧本定义
+    content = Column(Text)  # YAML/JSON 格式的策略定义
     alert_type = Column(String(50))  # 触发的告警类型
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.now)

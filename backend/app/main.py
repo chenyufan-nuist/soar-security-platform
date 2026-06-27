@@ -3,13 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 import json
+import os
+import requests
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from .database import get_db, init_db
 from .models import Alert as AlertModel, Ticket as TicketModel, Playbook as PlaybookModel, ExecutionLog
 from .schemas import (
     AlertCreate, AlertResponse, TicketCreate, TicketUpdate, TicketResponse,
-    PlaybookRunRequest, ExecutionResult
+    PlaybookRunRequest, ExecutionResult, AgentChatRequest, AgentChatResponse
 )
 from .services.alert_service import AlertService
 from .services.playbook_engine import PlaybookEngine
@@ -39,7 +44,7 @@ def _init_sample_playbooks():
     if db.query(PlaybookModel).filter_by(name="phishing_response").first():
         return
     
-    # 钓鱼应对剧本
+    # 钓鱼攻击响应策略
     phishing_playbook = PlaybookModel(
         name="phishing_response",
         description="自动应对钓鱼邮件事件",
@@ -55,7 +60,7 @@ def _init_sample_playbooks():
         })
     )
     
-    # 勒索应对剧本
+    # 勒索软件响应策略
     ransomware_playbook = PlaybookModel(
         name="ransomware_response",
         description="自动应对勒索软件事件",
@@ -184,19 +189,19 @@ async def update_ticket(ticket_id: int, update: TicketUpdate, db: Session = Depe
     return ticket
 
 
-# ============ 剧本 API ============
+# ============ 响应策略 API ============
 
-@app.post("/api/playbook/run", tags=["剧本"])
+@app.post("/api/playbook/run", tags=["响应策略"])
 async def run_playbook(request: PlaybookRunRequest, db: Session = Depends(get_db)):
-    """手动触发剧本执行"""
+    """手动触发响应策略执行"""
     alert = db.query(AlertModel).filter_by(id=request.alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="告警不存在")
     
     playbook = db.query(PlaybookModel).filter_by(name=request.playbook_name).first()
     if not playbook:
-        raise HTTPException(status_code=404, detail="剧本不存在")
-    
+        raise HTTPException(status_code=404, detail="响应策略不存在")
+
     engine = PlaybookEngine(db)
     result = engine.execute_playbook(playbook, alert)
     
@@ -205,23 +210,84 @@ async def run_playbook(request: PlaybookRunRequest, db: Session = Depends(get_db
         "playbook": request.playbook_name,
         "alert_id": request.alert_id,
         "actions": result,
-        "message": f"剧本 {request.playbook_name} 执行完成"
+        "message": f"响应策略 {request.playbook_name} 执行完成"
     }
 
 
-@app.get("/api/playbooks", tags=["剧本"])
+@app.get("/api/playbooks", tags=["响应策略"])
 async def get_playbooks(db: Session = Depends(get_db)):
-    """获取所有剧本"""
+    """获取所有响应策略"""
     return db.query(PlaybookModel).filter_by(is_active=True).all()
 
 
-@app.get("/api/playbook/{playbook_id}", tags=["剧本"])
+@app.get("/api/playbook/{playbook_id}", tags=["响应策略"])
 async def get_playbook(playbook_id: int, db: Session = Depends(get_db)):
-    """获取单个剧本详情"""
+    """获取响应策略详情"""
     playbook = db.query(PlaybookModel).filter_by(id=playbook_id).first()
     if not playbook:
-        raise HTTPException(status_code=404, detail="剧本不存在")
+        raise HTTPException(status_code=404, detail="响应策略不存在")
     return playbook
+
+
+# ============ 智能助手 ============
+
+# 系统提示词（服务器端统一管理）
+AGENT_SYSTEM_PROMPT = """你是内嵌在 SOAR 安全运营平台中的智能助手，帮助安全分析师处理日常运维工作。
+
+你的职责：
+- 用中文回答问题，语气专业、简洁
+- 帮助用户理解安全告警的含义和处置思路
+- 提供安全运营的通用最佳实践建议
+- 遇到不懂的问题诚实说明，不要编造"""
+
+
+@app.post("/api/agent/chat", response_model=AgentChatResponse, tags=["智能助手"])
+async def agent_chat(request: AgentChatRequest):
+    """智能助手聊天代理"""
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="智能助手服务未配置：缺少 DEEPSEEK_API_KEY 环境变量")
+
+    # 构建消息列表（系统提示词 + 历史对话）
+    messages = [
+        {"role": "system", "content": AGENT_SYSTEM_PROMPT},
+        *request.messages
+    ]
+
+    try:
+        resp = requests.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            json={
+                "model": "deepseek-chat",
+                "messages": messages,
+                "temperature": 0.7,
+                "max_tokens": 2000
+            },
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            },
+            timeout=30
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        reply = data["choices"][0]["message"]["content"]
+        return AgentChatResponse(reply=reply)
+
+    except requests.exceptions.Timeout:
+        raise HTTPException(status_code=504, detail="⏱️ 智能助手响应超时，请稍后重试")
+    except requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response is not None else 500
+        if status == 401:
+            raise HTTPException(status_code=502, detail="⚠️ 智能助手认证失败，请检查 API Key 配置")
+        elif status == 429:
+            raise HTTPException(status_code=429, detail="⏳ 请求过于频繁，请稍等片刻再试")
+        elif status == 503:
+            raise HTTPException(status_code=503, detail="🔧 智能助手服务正在维护中，请稍后重试")
+        else:
+            raise HTTPException(status_code=502, detail=f"智能助手服务异常 (HTTP {status})，请稍后重试")
+    except requests.exceptions.RequestException:
+        raise HTTPException(status_code=502, detail="智能助手服务暂时不可用，请稍后重试")
 
 
 # ============ 健康检查 ============

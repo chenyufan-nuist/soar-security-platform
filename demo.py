@@ -86,14 +86,14 @@ def submit_alert(alert_data: Dict[str, Any]) -> Dict[str, Any]:
     return {}
 
 def execute_playbook(alert_id: int, playbook_name: str) -> Dict[str, Any]:
-    """执行剧本"""
+    """执行响应策略"""
     try:
         payload = {"alert_id": alert_id, "playbook_name": playbook_name}
         resp = requests.post(f"{API_BASE}/api/playbook/run", json=payload, headers=HEADERS)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
-        print_error(f"执行剧本失败: {e}")
+        print_error(f"执行响应策略失败: {e}")
     return {}
 
 def get_tickets() -> list:
@@ -140,7 +140,7 @@ def scenario_1_phishing():
     
     time.sleep(1)
     
-    print_info("提示：告警已生成。请前往浏览器前端的【Threat Alerts】和【Automation Engine】手动执行剧本！")
+    print_info("提示：告警已生成。请前往浏览器前端的【Threat Alerts】和【Automation Engine】手动执行响应策略！")
     
 def scenario_2_ransomware():
     """演示场景2：勒索软件"""
@@ -167,7 +167,7 @@ def scenario_2_ransomware():
     print(f"   严重级别: {alert['severity']}")
     
     time.sleep(1)
-    print_info("提示：这又生成了一条由勒索软件触发的告警。请前往前台体验第二个 Playbook。")
+    print_info("提示：这又生成了一条由勒索软件触发的告警。请前往前台体验第二个响应策略。")
 
 def show_system_overview():
     """显示系统概览"""
@@ -242,7 +242,7 @@ def main():
 
 系统已成功展示以下功能：
   1. ✅ 告警接收与去重
-  2. ✅ 自动化剧本执行
+  2. ✅ 自动化响应策略执行
   3. ✅ 威胁情报查询
   4. ✅ 自动响应动作
   5. ✅ 工单生成与跟踪

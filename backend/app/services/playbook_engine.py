@@ -6,14 +6,14 @@ from .misp_service import MISPService
 
 
 class PlaybookEngine:
-    """剧本执行引擎"""
+    """响应策略执行引擎"""
     
     def __init__(self, db: Session):
         self.db = db
         self.misp = MISPService()
     
     def execute_playbook(self, playbook, alert):
-        """执行剧本"""
+        """执行响应策略"""
         playbook_content = json.loads(playbook.content)
         steps = playbook_content.get("steps", [])
         

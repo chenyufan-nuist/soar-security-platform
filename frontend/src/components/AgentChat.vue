@@ -20,8 +20,8 @@
           <div class="chat-header-left">
             <span class="chat-avatar">◈</span>
             <div class="chat-header-info">
-              <span class="chat-title">SOAR AI 智能助手</span>
-              <span class="chat-subtitle">DeepSeek · 安全运营顾问</span>
+              <span class="chat-title">SOAR 智能助手</span>
+              <span class="chat-subtitle">安全运营顾问</span>
             </div>
           </div>
           <div class="chat-header-actions">
@@ -41,7 +41,7 @@
                 <p>我可以帮助你：</p>
                 <ul>
                   <li>🔍 分析安全告警与威胁情报</li>
-                  <li>📋 解释自动化响应剧本的执行逻辑</li>
+                  <li>📋 解释自动化响应策略的执行逻辑</li>
                   <li>🛡️ 提供安全处置建议与最佳实践</li>
                   <li>📊 解读平台统计数据与运营指标</li>
                 </ul>
@@ -125,16 +125,8 @@ export default {
       messages: [],
       inputMessage: '',
       loading: false,
-      // DeepSeek API 配置
-      apiKey: 'sk-25fa8c22eccc4400861180c0cc81235a',
-      apiURL: 'https://api.deepseek.com/v1/chat/completions',
-      systemPrompt: `你是内嵌在 SOAR 安全运营平台中的 AI 智能助手，帮助安全分析师处理日常运维工作。
-
-你的职责：
-- 用中文回答问题，语气专业、简洁
-- 帮助用户理解安全告警的含义和处置思路
-- 提供安全运营的通用最佳实践建议
-- 遇到不懂的问题诚实说明，不要编造`,
+      // 智能助手 API（通过后端代理调用）
+      apiURL: '/api/agent/chat',
 
       quickActions: [
         '📊 这个平台有哪些主要功能？',
@@ -197,30 +189,23 @@ export default {
 
       this.scrollToBottom()
 
-      // 调用 DeepSeek API
+      // 调用后端代理 API
       this.loading = true
       try {
         const response = await axios.post(
           this.apiURL,
           {
-            model: 'deepseek-chat',
-            messages: [
-              { role: 'system', content: this.systemPrompt },
-              ...this.messages.map(m => ({ role: m.role, content: m.content }))
-            ],
-            temperature: 0.7,
-            max_tokens: 2000
+            messages: this.messages.map(m => ({ role: m.role, content: m.content }))
           },
           {
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${this.apiKey}`
+              'Content-Type': 'application/json'
             },
-            timeout: 30000
+            timeout: 35000
           }
         )
 
-        const reply = response.data.choices[0].message.content
+        const reply = response.data.reply
 
         this.messages.push({
           role: 'assistant',
@@ -228,19 +213,13 @@ export default {
           time: this.getTime()
         })
       } catch (err) {
-        console.error('AI API 调用失败:', err)
-        let errorMsg = '抱歉，AI 服务暂时不可用，请稍后重试。'
+        console.error('智能助手调用失败:', err)
+        let errorMsg = '抱歉，智能助手服务暂时不可用，请稍后重试。'
         if (err.response) {
-          const status = err.response.status
-          if (status === 401) {
-            errorMsg = '⚠️ API Key 无效，请联系管理员检查密钥配置。'
-          } else if (status === 429) {
-            errorMsg = '⏳ 请求过于频繁，请稍等片刻再试。'
-          } else if (status === 503) {
-            errorMsg = '🔧 AI 服务正在维护中，请稍后重试。'
-          }
+          // 后端返回的错误信息（已包含友好中文提示）
+          errorMsg = err.response.data?.detail || errorMsg
         } else if (err.code === 'ECONNABORTED') {
-          errorMsg = '⏱️ 请求超时，AI 服务响应较慢，请重试。'
+          errorMsg = '⏱️ 请求超时，智能助手响应较慢，请重试。'
         }
 
         this.messages.push({

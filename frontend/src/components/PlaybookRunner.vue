@@ -38,7 +38,7 @@
 
       <!-- Playbook Library -->
       <div class="cyber-panel library-panel">
-        <h3>可用剧本库 (PLAYBOOK LIBRARY)</h3>
+        <h3>响应策略库 (RESPONSE STRATEGIES)</h3>
         <div class="pb-list">
           <div v-for="p in playbooks" :key="p.name" class="pb-item" :class="{'active-pb': selectedPlaybook === p.name}" @click="selectedPlaybook = p.name">
             <div class="pb-name">{{ p.name }}</div>
