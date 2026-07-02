@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from typing import List
 import json
 import os
+import socket
+import ssl
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
@@ -263,7 +265,10 @@ async def agent_chat(request: AgentChatRequest):
     ]
 
     try:
-        resp = requests.post(
+        # 使用 Session 自动读取系统代理配置（解决校园网/企业网环境）
+        session = requests.Session()
+        session.trust_env = True
+        resp = session.post(
             "https://api.deepseek.com/v1/chat/completions",
             json={
                 "model": "deepseek-chat",
@@ -300,6 +305,96 @@ async def agent_chat(request: AgentChatRequest):
         raise HTTPException(status_code=502, detail="智能助手 SSL 证书验证失败，请检查系统时间和网络环境")
     except requests.exceptions.RequestException:
         raise HTTPException(status_code=502, detail="智能助手网络请求失败，请检查是否能访问 api.deepseek.com")
+
+
+# ============ AI 连接诊断 ============
+
+@app.get("/api/agent/test-connection", tags=["智能助手"])
+async def test_deepseek_connection():
+    """诊断 DeepSeek API 连接，逐步排查 DNS / TCP / SSL / API"""
+    result = {
+        "dns": {"status": "unknown", "detail": ""},
+        "tcp": {"status": "unknown", "detail": ""},
+        "ssl": {"status": "unknown", "detail": ""},
+        "api": {"status": "unknown", "detail": ""},
+    }
+    host = "api.deepseek.com"
+    port = 443
+
+    # 1. DNS 解析
+    try:
+        ip = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)
+        result["dns"]["status"] = "ok"
+        result["dns"]["detail"] = f"解析成功: {ip[0][4][0]}"
+    except socket.gaierror as e:
+        result["dns"]["status"] = "fail"
+        result["dns"]["detail"] = f"DNS解析失败: {e}，请检查是否能访问外网"
+        return result
+
+    # 2. TCP 连接
+    try:
+        sock = socket.create_connection((host, port), timeout=10)
+        result["tcp"]["status"] = "ok"
+        result["tcp"]["detail"] = "TCP 连接成功"
+        sock.close()
+    except socket.timeout:
+        result["tcp"]["status"] = "fail"
+        result["tcp"]["detail"] = "TCP 连接超时，端口可能被防火墙拦截"
+        return result
+    except Exception as e:
+        result["tcp"]["status"] = "fail"
+        result["tcp"]["detail"] = f"TCP 连接失败: {e}"
+        return result
+
+    # 3. SSL 握手
+    try:
+        ctx = ssl.create_default_context()
+        with socket.create_connection((host, port), timeout=10) as sock:
+            with ctx.wrap_socket(sock, server_hostname=host) as ssock:
+                result["ssl"]["status"] = "ok"
+                result["ssl"]["detail"] = f"SSL 握手成功 (TLS {ssock.version()})"
+    except ssl.SSLError as e:
+        result["ssl"]["status"] = "fail"
+        result["ssl"]["detail"] = f"SSL 握手失败: {e}"
+        return result
+    except Exception as e:
+        result["ssl"]["status"] = "fail"
+        result["ssl"]["detail"] = f"SSL 连接失败: {e}"
+        return result
+
+    # 4. API 连通测试
+    api_key = os.getenv("DEEPSEEK_API_KEY", "not-set")
+    if api_key != "not-set":
+        try:
+            session = requests.Session()
+            session.trust_env = True
+            resp = session.post(
+                f"https://{host}/v1/chat/completions",
+                json={"model": "deepseek-chat", "messages": [{"role": "user", "content": "hi"}], "max_tokens": 5},
+                headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+                timeout=15
+            )
+            result["api"]["status"] = "ok"
+            result["api"]["detail"] = f"API 调用成功 (HTTP {resp.status_code})"
+        except requests.exceptions.HTTPError as e:
+            code = e.response.status_code if e.response else "?"
+            detail = "认证失败，API Key 无效" if code == 401 else f"HTTP {code}"
+            result["api"]["status"] = "fail"
+            result["api"]["detail"] = detail
+        except requests.exceptions.Timeout:
+            result["api"]["status"] = "fail"
+            result["api"]["detail"] = "API 响应超时"
+        except requests.exceptions.ConnectionError as e:
+            result["api"]["status"] = "fail"
+            result["api"]["detail"] = f"API 连接失败: {e}"
+        except Exception as e:
+            result["api"]["status"] = "fail"
+            result["api"]["detail"] = f"API 请求异常: {type(e).__name__}: {e}"
+    else:
+        result["api"]["status"] = "skip"
+        result["api"]["detail"] = "未配置 API Key，跳过 API 测试（可在前端设置面板中配置后重试）"
+
+    return result
 
 
 # ============ 健康检查 ============
