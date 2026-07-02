@@ -1,6 +1,6 @@
-fastapi==0.103.2
-uvicorn==0.22.0
-SQLAlchemy==2.0.40
-pydantic==2.5.3
-python-dotenv==0.21.1
-requests==2.31.0
+fastapi>=0.103.2,<1.0
+uvicorn>=0.22.0,<1.0
+SQLAlchemy>=2.0.0,<3.0
+pydantic>=2.5.3,<3.0
+python-dotenv>=0.21.1,<2.0
+requests>=2.31.0,<3.0
