@@ -270,8 +270,8 @@ export default {
         if (err.response) {
           // 后端返回的错误信息（已包含友好中文提示）
           errorMsg = err.response.data?.detail || errorMsg
-          // 如果是缺少 API Key 的错误，自动弹出设置面板
-          if (errorMsg.includes('API Key') || errorMsg.includes('DEEPSEEK_API_KEY')) {
+          // 仅当"缺少/未配置"Key时才弹设置面板，验证失败不弹
+          if (errorMsg.includes('请在设置中填入') || errorMsg.includes('未配置')) {
             this.showSettings = true
           }
         } else if (err.code === 'ECONNABORTED') {
