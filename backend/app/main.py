@@ -5,11 +5,17 @@ from typing import List
 import json
 import os
 import requests
-import urllib3
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# 注入系统证书库，解决 Windows 上 requests HTTPS 连接失败问题
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    pass
 
 from .database import get_db, init_db
 from .models import Alert as AlertModel, Ticket as TicketModel, Playbook as PlaybookModel, ExecutionLog
