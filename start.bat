@@ -32,10 +32,16 @@ if not exist "backend\venv" (
 )
 
 echo.
-echo [3/5] 安装后端依赖...
+echo [3/5] 安装后端依赖 (请耐心等待)...
 cd backend
 call venv\Scripts\activate.bat
-pip install -q -r requirements.txt
+pip install -r requirements.txt
+if errorlevel 1 (
+    echo.
+    echo [错误] 后端依赖安装失败！请检查上面的错误信息。
+    pause
+    exit /b 1
+)
 cd ..
 echo [ OK ] 后端依赖安装完成
 
@@ -61,9 +67,25 @@ echo.
 echo [4/5] 启动 FastAPI 后端服务...
 echo 后端地址: http://localhost:8000
 echo API 文档: http://localhost:8000/docs
-start cmd /k "cd backend && venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+echo.
+echo *** 请勿关闭此窗口！这是后端服务 ***
+echo.
+cd backend
+call venv\Scripts\activate.bat
+start "SOAR Backend" cmd /k "cd /d %cd% && call venv\Scripts\activate.bat && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+cd ..
 
-timeout /t 2 /nobreak
+echo 等待后端启动 (5秒)...
+timeout /t 5 /nobreak >nul
+
+echo 验证后端是否就绪...
+curl -s http://localhost:8000/health >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] 后端可能未成功启动，请检查 "SOAR Backend" 窗口中的错误信息
+    echo        如果报 ModuleNotFoundError，说明依赖安装不完整
+) else (
+    echo [ OK ] 后端服务运行正常
+)
 
 echo.
 echo [5/5] 启动 Vue3 前端服务...
@@ -81,10 +103,9 @@ cd frontend
 if not exist "node_modules" (
     echo 首次安装依赖，请稍候...
     call npm.cmd install
-) else (
-    echo 依赖已准备就绪
 )
-start cmd /k "npm.cmd run dev"
+start "SOAR Frontend" cmd /k "npm.cmd run dev"
+cd ..
 
 echo.
 echo =====================================
@@ -94,21 +115,10 @@ echo.
 echo 重要信息：
 echo    - 后端服务: http://localhost:8000
 echo    - 前端应用: http://localhost:5173
-echo    - API文档: http://localhost:8000/docs
+echo    - API 文档: http://localhost:8000/docs
+echo    - 连接诊断: http://localhost:8000/api/agent/test-connection
 echo.
-echo 演示步骤：
-echo    1. 打开浏览器访问 http://localhost:5173
-echo    2. 进入"响应策略"页面
-echo    3. 提交测试告警或通过 API 提交
-echo    4. 选择策略后点击"执行"
-echo    5. 查看工单和报告
-echo.
-echo 测试告警 API 命令：
-echo.
-echo    curl -X POST "http://localhost:8000/api/alert" ^
-echo      -H "Content-Type: application/json" ^
-echo      -d "{\"type\": \"phishing\", \"source\": \"email_gateway\", \"user\": \"test@company.com\", \"ioc\": \"http://fake-login-portal.com\", \"severity\": \"high\"}"
-echo.
-echo =====================================
+echo 如果智能助手无法使用，请先访问上面的连接诊断地址
+echo 查看哪一步出了问题。
 echo.
 pause
