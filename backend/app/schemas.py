@@ -90,6 +90,7 @@ class ExecutionResult(BaseModel):
 
 class AgentChatRequest(BaseModel):
     messages: List[dict]  # [{"role": "user", "content": "..."}, ...]
+    api_key: Optional[str] = None  # 前端可传入，作为环境变量的降级方案
 
 
 class AgentChatResponse(BaseModel):

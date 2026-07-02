@@ -25,6 +25,7 @@
             </div>
           </div>
           <div class="chat-header-actions">
+            <button class="chat-action-btn" @click="showSettings = true" title="API Key 设置">⚙</button>
             <button class="chat-action-btn" @click="clearChat" title="清空对话">⌫</button>
             <button class="chat-action-btn" @click="toggleChat" title="最小化">─</button>
           </div>
@@ -108,6 +109,43 @@
             >▶</button>
           </div>
         </div>
+
+        <!-- API Key 设置面板 -->
+        <div class="settings-overlay" v-if="showSettings" @click.self="showSettings = false">
+          <div class="settings-panel">
+            <div class="settings-header">
+              <span>⚙ API Key 设置</span>
+              <button class="chat-action-btn" @click="showSettings = false">✕</button>
+            </div>
+            <div class="settings-body">
+              <p class="settings-desc">
+                请输入你的 <strong>DeepSeek API Key</strong>，用于驱动智能助手。
+              </p>
+              <div class="settings-input-row">
+                <input
+                  :type="showKey ? 'text' : 'password'"
+                  v-model="apiKeyInput"
+                  class="settings-input"
+                  placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  @keydown.enter="saveApiKey"
+                />
+                <button class="toggle-key-btn" @click="showKey = !showKey" :title="showKey ? '隐藏' : '显示'">
+                  {{ showKey ? '🙈' : '👁' }}
+                </button>
+              </div>
+              <a href="https://platform.deepseek.com/api_keys" target="_blank" class="settings-link">
+                🔗 没有 Key？点击这里获取 →
+              </a>
+              <p class="settings-hint">
+                💡 Key 仅保存在你的浏览器本地，不会上传到服务器。
+              </p>
+            </div>
+            <div class="settings-footer">
+              <button class="settings-btn cancel" @click="showSettings = false">取消</button>
+              <button class="settings-btn save" @click="saveApiKey" :disabled="!apiKeyInput.trim()">保存</button>
+            </div>
+          </div>
+        </div>
       </div>
     </transition>
   </div>
@@ -128,12 +166,25 @@ export default {
       // 智能助手 API（通过后端代理调用）
       apiURL: '/api/agent/chat',
 
+      // API Key 设置
+      showSettings: false,
+      apiKey: '',
+      apiKeyInput: '',
+      showKey: false,
+
       quickActions: [
         '📊 这个平台有哪些主要功能？',
         '🛡️ 收到安全告警后应该怎么处理？',
         '💡 如何判断一个告警的紧急程度？',
         '📋 SOAR 平台相比传统 SIEM 有什么优势？'
       ]
+    }
+  },
+  mounted() {
+    // 从 localStorage 恢复 API Key
+    const saved = localStorage.getItem('deepseek_api_key')
+    if (saved) {
+      this.apiKey = saved
     }
   },
   methods: {
@@ -195,7 +246,8 @@ export default {
         const response = await axios.post(
           this.apiURL,
           {
-            messages: this.messages.map(m => ({ role: m.role, content: m.content }))
+            messages: this.messages.map(m => ({ role: m.role, content: m.content })),
+            ...(this.apiKey ? { api_key: this.apiKey } : {})
           },
           {
             headers: {
@@ -218,6 +270,10 @@ export default {
         if (err.response) {
           // 后端返回的错误信息（已包含友好中文提示）
           errorMsg = err.response.data?.detail || errorMsg
+          // 如果是缺少 API Key 的错误，自动弹出设置面板
+          if (errorMsg.includes('API Key') || errorMsg.includes('DEEPSEEK_API_KEY')) {
+            this.showSettings = true
+          }
         } else if (err.code === 'ECONNABORTED') {
           errorMsg = '⏱️ 请求超时，智能助手响应较慢，请重试。'
         }
@@ -233,6 +289,14 @@ export default {
           this.scrollToBottom()
         })
       }
+    },
+    saveApiKey() {
+      const key = this.apiKeyInput.trim()
+      if (!key) return
+      this.apiKey = key
+      localStorage.setItem('deepseek_api_key', key)
+      this.apiKeyInput = ''
+      this.showSettings = false
     },
     // 简易 Markdown 渲染
     renderMarkdown(text) {
@@ -626,6 +690,136 @@ export default {
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+}
+
+/* ===== API Key 设置面板 ===== */
+.settings-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: var(--radius-lg);
+}
+.settings-panel {
+  width: 340px;
+  background: #fff;
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: scaleIn 0.2s ease-out;
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  background: linear-gradient(135deg, rgba(0, 102, 238, 0.06), rgba(0, 68, 170, 0.06));
+  border-bottom: 1px solid var(--line-light);
+  font-family: var(--font-tech);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.settings-body {
+  padding: 1rem;
+}
+.settings-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.8rem;
+  line-height: 1.5;
+}
+.settings-input-row {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+.settings-input {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.9);
+  outline: none;
+  transition: var(--transition);
+}
+.settings-input:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 6px rgba(0, 102, 238, 0.15);
+}
+.toggle-key-btn {
+  background: none;
+  border: 1px solid var(--line-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0 0.5rem;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+.toggle-key-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.settings-link {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--neon-cyan);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+}
+.settings-link:hover {
+  text-decoration: underline;
+}
+.settings-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--line-light);
+  background: rgba(0, 0, 0, 0.02);
+}
+.settings-btn {
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--line-light);
+  background: #fff;
+  color: var(--text-main);
+  transition: var(--transition);
+}
+.settings-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+.settings-btn.save {
+  background: linear-gradient(135deg, #0066ee, #0044aa);
+  color: #fff;
+  border-color: transparent;
+}
+.settings-btn.save:hover:not(:disabled) {
+  box-shadow: var(--neon-cyan-glow);
+}
+.settings-btn.save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.settings-btn.cancel {
+  color: var(--text-muted);
 }
 
 /* 响应式：小屏幕适配 */

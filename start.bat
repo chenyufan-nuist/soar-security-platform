@@ -40,6 +40,24 @@ cd ..
 echo ✅ 后端依赖安装完成
 
 echo.
+echo [3.5/5] 检查环境配置...
+if not exist "backend\.env" (
+    echo ⚠️  未检测到 backend\.env，正在从模板创建...
+    copy backend\.env.example backend\.env >nul
+    echo ✅ 已创建 backend\.env
+    echo.
+    echo ⚠️  ==============================================
+    echo ⚠️  智能助手需要 DeepSeek API Key 才能使用！
+    echo ⚠️  请编辑 backend\.env 文件，将 your-api-key-here
+    echo ⚠️  替换为你的真实 API Key。
+    echo ⚠️  或者：打开前端后点击智能助手 ⚙ 图标直接填入
+    echo ⚠️  ==============================================
+    echo.
+) else (
+    echo ✅ 环境配置已就绪
+)
+
+echo.
 echo [4/5] 启动 FastAPI 后端服务...
 echo 📍 后端地址: http://localhost:8000
 echo 📍 API 文档: http://localhost:8000/docs
