@@ -5,6 +5,7 @@ from typing import List
 import json
 import os
 import requests
+import urllib3
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -276,19 +277,23 @@ async def agent_chat(request: AgentChatRequest):
         return AgentChatResponse(reply=reply)
 
     except requests.exceptions.Timeout:
-        raise HTTPException(status_code=504, detail="⏱️ 智能助手响应超时，请稍后重试")
+        raise HTTPException(status_code=504, detail="智能助手响应超时，请稍后重试")
     except requests.exceptions.HTTPError as e:
         status = e.response.status_code if e.response is not None else 500
         if status == 401:
-            raise HTTPException(status_code=502, detail="⚠️ 智能助手认证失败，请检查 API Key 配置")
+            raise HTTPException(status_code=502, detail="智能助手认证失败，API Key 无效或已过期，请检查后重试")
         elif status == 429:
-            raise HTTPException(status_code=429, detail="⏳ 请求过于频繁，请稍等片刻再试")
+            raise HTTPException(status_code=429, detail="请求过于频繁，请稍等片刻再试")
         elif status == 503:
-            raise HTTPException(status_code=503, detail="🔧 智能助手服务正在维护中，请稍后重试")
+            raise HTTPException(status_code=503, detail="智能助手服务正在维护中，请稍后重试")
         else:
             raise HTTPException(status_code=502, detail=f"智能助手服务异常 (HTTP {status})，请稍后重试")
+    except requests.exceptions.ConnectionError:
+        raise HTTPException(status_code=502, detail="智能助手连接失败：无法访问 api.deepseek.com，请检查网络连接或代理设置")
+    except requests.exceptions.SSLError:
+        raise HTTPException(status_code=502, detail="智能助手 SSL 证书验证失败，请检查系统时间和网络环境")
     except requests.exceptions.RequestException:
-        raise HTTPException(status_code=502, detail="智能助手服务暂时不可用，请稍后重试")
+        raise HTTPException(status_code=502, detail="智能助手网络请求失败，请检查是否能访问 api.deepseek.com")
 
 
 # ============ 健康检查 ============
